@@ -1,9 +1,8 @@
 package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.user.exception.AlreadyEmailExistException;
 
@@ -25,7 +24,7 @@ public class UserServiceImpl implements UserService {
     public User get(long id) {
         User user = userRepository.get(id);
         if (Objects.isNull(user)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "пользователь с таким id не найден");
+            throw new UserNotFoundException("пользователь с таким id не найден");
         }
 
         return user;

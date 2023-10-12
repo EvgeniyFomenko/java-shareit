@@ -6,7 +6,6 @@ import ru.practicum.shareit.user.dto.UserDto;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * TODO Sprint add-controllers.
@@ -19,23 +18,23 @@ public class UserController {
 
     @GetMapping
     public List<UserDto> getAll() {
-        return userService.getAll().stream().map(UserMapper::mapperToDto).collect(Collectors.toList());
+        return userService.getAll();
     }
 
     @GetMapping("/{id}")
     public UserDto getById(@PathVariable long id) {
-        return UserMapper.mapperToDto(userService.get(id));
+        return userService.get(id);
     }
 
     @PostMapping
     public UserDto create(@RequestBody @Valid UserDto user) {
-        return UserMapper.mapperToDto(userService.create(UserMapper.mapperFromDto(user)));
+        return userService.create(user);
     }
 
     @PatchMapping("/{id}")
     public UserDto update(@RequestBody UserDto user,@PathVariable long id) {
         user.setId(id);
-        return UserMapper.mapperToDto(userService.update(UserMapper.mapperFromDto(user)));
+        return userService.update(user);
     }
 
     @DeleteMapping("/{id}")

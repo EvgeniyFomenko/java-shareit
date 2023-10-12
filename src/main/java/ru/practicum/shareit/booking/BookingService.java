@@ -1,11 +1,24 @@
 package ru.practicum.shareit.booking;
 
-public interface BookingService {
-    Booking get(int id);
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingInputStatusDto;
+import ru.practicum.shareit.booking.dto.BookingItemDto;
 
-    Booking create(Booking booking);
+import java.util.List;
+
+public interface BookingService {
+    BookingDto get(BookingInputStatusDto bookingInputStatusDto);
+
+    BookingDto create(BookingItemDto bookingItemDto, long userId);
 
     Booking update(Booking booking);
 
     void delete(int id);
+
+    BookingDto updateBookingStatusById(BookingInputStatusDto bookingInputStatusDto);
+
+    List<BookingDto> getAllBookingForUser(BookingInputStatusDto bookingInputStatusDto);
+
+    List<BookingDto> getAllBookingForOwnerItem(BookingInputStatusDto bookingInputStatusDto);
+
 }

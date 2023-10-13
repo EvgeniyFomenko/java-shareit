@@ -3,7 +3,6 @@ package ru.practicum.shareit.item;
 import ru.practicum.shareit.item.dto.CommentAnswerDto;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.model.Item;
 
 import java.util.List;
 
@@ -14,7 +13,7 @@ public interface ItemService {
 
     ItemDto create(ItemDto itemDto, long userId);
 
-    ItemDto update(Item item, long userId);
+    ItemDto update(ItemDto item, long userId);
 
     void delete(long id);
 

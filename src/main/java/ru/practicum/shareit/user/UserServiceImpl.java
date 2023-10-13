@@ -6,6 +6,7 @@ import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.exception.AlreadyEmailExistException;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto create(UserDto user) {
+    public UserDto create(@Valid UserDto user) {
         User user1 = userRepository.save(UserMapper.mapperFromDto(user));
         return UserMapper.mapperToDto(user1);
     }

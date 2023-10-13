@@ -18,6 +18,7 @@ import ru.practicum.shareit.item.repositories.CommentRepository;
 import ru.practicum.shareit.item.repositories.ItemRepository;
 import ru.practicum.shareit.user.UserRepository;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -75,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
 
 
     @Override
-    public ItemDto create(ItemDto itemDto, long userId) {
+    public ItemDto create(@Valid ItemDto itemDto, long userId) {
         userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
         itemDto.setOwnerId(userId);
 
@@ -84,7 +85,9 @@ public class ItemServiceImpl implements ItemService {
 
 
     @Override
-    public ItemDto update(Item item, long userId) {
+    public ItemDto update(@Valid ItemDto itemDto, long userId) {
+        Item item = ItemDtoMapper.mapToItem(itemDto);
+
         validation(userId, item.getId());
 
         Item item1 = ItemDtoMapper.mapToItem(get(item.getId(), userId));
@@ -125,7 +128,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public CommentAnswerDto postCommentByItemId(CommentDto comment) {
+    public CommentAnswerDto postCommentByItemId(@Valid CommentDto comment) {
         Booking booking = bookingRepository.findFirstByIdBookerAndItemIdAndStatusOrderByEndAsc(comment.getId(), comment.getItemId(), StatusBooking.APPROVED).orElseThrow(() -> new OwnerHasNotItemException("Пользователь не бронировал эту вещь"));
 
         if (Objects.isNull(booking) || booking.getEnd().isAfter(LocalDateTime.now())) {

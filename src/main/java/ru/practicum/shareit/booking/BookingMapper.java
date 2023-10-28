@@ -19,6 +19,6 @@ public class BookingMapper {
     public static BookingInputStatusDto toBookingInputStatusDto(long id, String status, long userId) {
         return BookingInputStatusDto.builder().bookingId(id)
                 .userId(userId)
-                .state(status).build();
+                .isApprove(status).build();
     }
 }

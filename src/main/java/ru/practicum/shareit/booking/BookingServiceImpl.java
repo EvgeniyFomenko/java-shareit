@@ -1,6 +1,8 @@
 package ru.practicum.shareit.booking;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingInputStatusDto;
@@ -12,6 +14,7 @@ import ru.practicum.shareit.user.UserRepository;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -67,14 +70,19 @@ public class BookingServiceImpl implements BookingService {
 
     public BookingDto updateBookingStatusById(BookingInputStatusDto bookingInputStatusDto) {
         Booking booking = bookingRepository.findById(bookingInputStatusDto.getBookingId()).orElseThrow(() -> new BookingNotFoundException("Бранирование не найдено"));
-        String status = bookingInputStatusDto.getState();
+        String isApprove = bookingInputStatusDto.getIsApprove();
+        if (!isApprove.contains("false")) {
+            if (!isApprove.contains("true")) {
+                throw new NotFoundStateException("не известное значение isApproved");
+            }
+        }
         long userId = bookingInputStatusDto.getUserId();
 
         if (booking.getStatus().equals(StatusBooking.APPROVED)) {
             throw new ChangeDeprecated("После подтверждения изменения в обратную сторону запрещены");
         }
 
-        if (status.equals("true")) {
+        if (Boolean.parseBoolean(isApprove)) {
             if (Objects.equals(booking.getItem().getIdOwner(), userId)) {
                 booking.setStatus(StatusBooking.APPROVED);
                 bookingRepository.save(booking);
@@ -82,9 +90,7 @@ public class BookingServiceImpl implements BookingService {
             } else {
                 throw new NotFoundStateException("Пользователь запросивший изменение не является владельцем вещи");
             }
-        }
-
-        if (status.equals("false")) {
+        } else {
             if (Objects.equals(booking.getItem().getIdOwner(), userId)) {
                 booking.setStatus(StatusBooking.REJECTED);
             } else if (Objects.equals(booking.getIdBooker(), userId)) {
@@ -95,38 +101,40 @@ public class BookingServiceImpl implements BookingService {
             bookingRepository.save(booking);
             return BookingMapper.toBookingDto(booking);
         }
-        throw new NotFoundStateException("не известное значение state");
     }
 
-    public List<BookingDto> getAllBookingForUser(BookingInputStatusDto bookingInputStatusDto) {
+    public List<BookingDto> getAllBookingForUser(BookingInputStatusDto bookingInputStatusDto, Integer from, Integer size) {
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return Collections.emptyList();
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
+
         long userId = bookingInputStatusDto.getUserId();
-        String state = bookingInputStatusDto.getState();
+        PageRequest pageRequest = PageRequest.of(from > 0 ? from / size : 0, size, Sort.Direction.ASC, "id");
+        State state;
+        try {
+            state = State.valueOf(bookingInputStatusDto.getIsApprove());
+        } catch (IllegalArgumentException illegalArgumentException) {
+            throw new UnknownStatus("UNSUPPORTED STATUS");
+        }
 
         userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("нет пользователя с таким id"));
-        if (state.equals("ALL")) {
-            return bookingRepository.findAllByIdBookerOrderByIdDesc(userId).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        if (state.equals(State.ALL)) {
+            return bookingRepository.findAllByIdBookerOrderByIdDesc(userId, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        } else if (state.equals(State.FUTURE)) {
+            return bookingRepository.findAllByIdBookerAndStartIsAfterOrderByStartDesc(userId, LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        } else if (state.equals(State.WAITING)) {
+            return bookingRepository.findAllByIdBookerAndStatus(userId, StatusBooking.WAITING, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        } else if (state.equals(State.REJECTED)) {
+            return bookingRepository.findAllByIdBookerAndStatus(userId, StatusBooking.REJECTED, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        } else if (state.equals(State.CURRENT)) {
+            return bookingRepository.findAllByIdBookerAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+        } else {
+            return bookingRepository.findAllByIdBookerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(userId, StatusBooking.APPROVED, LocalDateTime.now(), LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
         }
-
-        if (state.equals("FUTURE")) {
-            return bookingRepository.findAllByIdBookerAndStartIsAfterOrderByStartDesc(userId, LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-        }
-
-        if (state.equals("WAITING")) {
-            return bookingRepository.findAllByIdBookerAndStatus(userId, StatusBooking.WAITING).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-        }
-
-        if (state.equals("REJECTED")) {
-            return bookingRepository.findAllByIdBookerAndStatus(userId, StatusBooking.REJECTED).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-        }
-
-        if (state.equals("CURRENT")) {
-            return bookingRepository.findAllByIdBookerAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-        }
-
-        if (state.equals("PAST")) {
-            return bookingRepository.findAllByIdBookerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(userId, StatusBooking.APPROVED, LocalDateTime.now(), LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-        }
-        throw new UnknownStatus("UNSUPPORTED STATUS");
     }
 
     @Override
@@ -142,31 +150,41 @@ public class BookingServiceImpl implements BookingService {
         throw new NotFoundStateException("Нет доступа для просмотра");
     }
 
-    public List<BookingDto> getAllBookingForOwnerItem(BookingInputStatusDto booking) {
-        long userId = booking.getUserId();
-        String state = booking.getState();
-        int zeroItem = 0;
-        int countItemUser = itemRepository.countItemByIdOwner(userId);
-        if (countItemUser > zeroItem) {
-            if (state.equals("ALL")) {
-                return bookingRepository.findAllByItemIdOwnerOrderByIdDesc(userId).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
-            if (state.equals("FUTURE")) {
-                return bookingRepository.findAllByItemIdOwnerAndStartIsAfterOrderByStartDesc(userId, LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
-            if (state.equals("WAITING")) {
-                return bookingRepository.findAllByItemIdOwnerAndStatus(userId, StatusBooking.WAITING).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
-            if (state.equals("REJECTED")) {
-                return bookingRepository.findAllByItemIdOwnerAndStatus(userId, StatusBooking.REJECTED).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
-            if (state.equals("CURRENT")) {
-                return bookingRepository.findAllByItemIdOwnerAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
-            if (state.equals("PAST")) {
-                return bookingRepository.findAllByItemIdOwnerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(userId, StatusBooking.APPROVED, LocalDateTime.now(), LocalDateTime.now()).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
-            }
+    public List<BookingDto> getAllBookingForOwnerItem(BookingInputStatusDto booking, Integer from, Integer size) {
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return Collections.emptyList();
         }
-        throw new UnknownStatus("UNSUPPORTED STATUS");
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
+        PageRequest pageRequest = PageRequest.of(from > 0 ? from / size : 0, size, Sort.Direction.ASC, "id");
+        State state;
+        try {
+            state = State.valueOf(booking.getIsApprove());
+        } catch (IllegalArgumentException illegalArgumentException) {
+            throw new UnknownStatus("UNSUPPORTED STATUS");
+        }
+        long userId = booking.getUserId();
+        int countItemUser = itemRepository.countItemByIdOwner(userId);
+        int zeroItem = 0;
+        if (countItemUser > zeroItem) {
+
+            if (state.equals(State.ALL)) {
+                return bookingRepository.findAllByItemIdOwnerOrderByIdDesc(userId, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            } else if (state.equals(State.FUTURE)) {
+                return bookingRepository.findAllByItemIdOwnerAndStartIsAfterOrderByStartDesc(userId, LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            } else if (state.equals(State.WAITING)) {
+                return bookingRepository.findAllByItemIdOwnerAndStatus(userId, StatusBooking.WAITING, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            } else if (state.equals(State.REJECTED)) {
+                return bookingRepository.findAllByItemIdOwnerAndStatus(userId, StatusBooking.REJECTED, pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            } else if (state.equals(State.CURRENT)) {
+                return bookingRepository.findAllByItemIdOwnerAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            } else {
+                return bookingRepository.findAllByItemIdOwnerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(userId, StatusBooking.APPROVED, LocalDateTime.now(), LocalDateTime.now(), pageRequest).stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
+            }
+        } else {
+            throw new UnknownStatus("UNSUPPORTED STATUS");
+        }
     }
 }

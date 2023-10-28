@@ -14,6 +14,7 @@ public class ItemDtoMapper {
                 .lastBooking(item.getLastBooking())
                 .nextBooking(item.getNextBooking())
                 .comments(item.getComments())
+                .requestId(item.getRequestId())
                 .build();
     }
 
@@ -24,6 +25,7 @@ public class ItemDtoMapper {
                 .idOwner(item.getOwnerId())
                 .available(item.getAvailable())
                 .id(item.getId())
+                .requestId(item.getRequestId())
                 .build();
     }
 

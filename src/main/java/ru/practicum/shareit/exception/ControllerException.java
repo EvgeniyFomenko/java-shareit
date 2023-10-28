@@ -16,11 +16,6 @@ public class ControllerException {
         return new ExceptionEntity("Not found such user", userNotFoundException.getMessage());
     }
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionEntity emptyNameExceptionHandler(EmptyNameException emptyNameException) {
-        return new ExceptionEntity("Empty name exception", emptyNameException.getMessage());
-    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -80,5 +75,11 @@ public class ControllerException {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ExceptionEntity changeDeprecated(final ChangeDeprecated changeDeprecated) {
         return new ExceptionEntity("Changes deprecated", changeDeprecated.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ExceptionEntity badArgumentsPagination(final BadArgumentsPaginationException badArgumentsPaginationException) {
+        return new ExceptionEntity("Bad arguments pagination", badArgumentsPaginationException.getMessage());
     }
 }

@@ -2,6 +2,8 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingForItemMapper;
@@ -35,8 +37,17 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
 
     @Override
-    public List<ItemDto> getAll(long userId) {
-        return itemRepository.findAllByIdOwner(userId).stream()
+    public List<ItemDto> getAll(long userId, Integer from, Integer size) {
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return Collections.emptyList();
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
+        PageRequest pageRequest = PageRequest.of(from > 0 ? from / size : 0, size, Sort.Direction.ASC, "id");
+
+        return itemRepository.findAllByIdOwner(userId, pageRequest).stream()
                 .peek(e -> {
                     setLastFutureBooking(e, userId);
                     setCommentsInItem(e);
@@ -52,6 +63,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto get(long itemId, long userId) {
+        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new ItemNotFoundException("Вещ с таким id не зарегестрирована"));
         setCommentsInItem(item);
         setLastFutureBooking(item, userId);
@@ -118,12 +130,20 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> search(String text) {
+    public List<ItemDto> search(String text, Integer from, Integer size) {
         if (text.isBlank()) {
             return Collections.<ItemDto>emptyList();
         }
-        List<Item> items = itemRepository.findAllByDescriptionContainingIgnoreCaseAndAvailableTrue(text);
-        System.out.println(items.size());
+
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return Collections.emptyList();
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
+        List<Item> items = itemRepository.findAllByDescriptionContainingIgnoreCaseAndAvailableTrue(text,PageRequest.of(from > 0 ? from / size : 0, size, Sort.Direction.ASC, "id")).getContent();
+
         return items.stream().filter(e -> e.getAvailable().equals(true)).map(ItemDtoMapper::mapToDto).collect(Collectors.toList());
     }
 
@@ -131,13 +151,10 @@ public class ItemServiceImpl implements ItemService {
     public CommentAnswerDto postCommentByItemId(@Valid CommentDto comment) {
         Booking booking = bookingRepository.findFirstByIdBookerAndItemIdAndStatusOrderByEndAsc(comment.getId(), comment.getItemId(), StatusBooking.APPROVED).orElseThrow(() -> new OwnerHasNotItemException("Пользователь не бронировал эту вещь"));
 
-        if (Objects.isNull(booking) || booking.getEnd().isAfter(LocalDateTime.now())) {
+        if (booking.getEnd().isAfter(LocalDateTime.now())) {
             throw new ChangeDeprecated("Пользователю запрещено оставлять комменты до окончания аренды");
         }
 
-        if (booking.getEnd().isAfter(LocalDateTime.now())) {
-            throw new AccessDenideException("Пользователь не имеет права ставить отзывы до окончания аренды");
-        }
         Comment comment1 = commentRepository.save(CommentDtoMapper.fromDto(comment));
         comment1.setAuthor(userRepository.findById(comment1.getAuthor().getId()).get());
         return CommentDtoMapper.toAnswerDto(comment1);

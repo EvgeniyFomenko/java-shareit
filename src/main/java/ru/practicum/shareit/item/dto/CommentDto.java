@@ -8,6 +8,8 @@ import javax.validation.constraints.NotBlank;
 @Setter
 @ToString
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommentDto {
     @NonNull
     private long id;

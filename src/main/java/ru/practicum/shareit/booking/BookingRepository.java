@@ -1,5 +1,7 @@
 package ru.practicum.shareit.booking;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -11,17 +13,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Booking findByItemId(long id);
 
-    List<Booking> findAllByItemIdOwnerOrderByIdDesc(long userId);
+    Page<Booking> findAllByItemIdOwnerOrderByIdDesc(long userId, Pageable id);
 
-    List<Booking> findAllByIdBookerOrderByIdDesc(long userId);
+    Page<Booking> findAllByIdBookerOrderByIdDesc(long userId, Pageable id);
 
-    List<Booking> findAllByIdBookerAndStatus(long userId, StatusBooking statusBooking);
+    Page<Booking> findAllByIdBookerAndStatus(long userId, StatusBooking statusBooking, Pageable id);
 
-    List<Booking> findAllByItemIdOwnerAndStatus(long userId, StatusBooking statusBooking);
+    Page<Booking> findAllByItemIdOwnerAndStatus(long userId, StatusBooking statusBooking, Pageable id);
 
-    List<Booking> findAllByIdBookerAndStartIsAfterOrderByStartDesc(long bookerId, LocalDateTime start);
+    Page<Booking> findAllByIdBookerAndStartIsAfterOrderByStartDesc(long bookerId, LocalDateTime start, Pageable id);
 
-    List<Booking> findAllByItemIdOwnerAndStartIsAfterOrderByStartDesc(long userId, LocalDateTime now);
+    Page<Booking> findAllByItemIdOwnerAndStartIsAfterOrderByStartDesc(long userId, LocalDateTime now, Pageable id);
 
     Booking findFirstByItemIdOwnerAndStartIsBeforeAndStatusOrderByStartDesc(long userId, LocalDateTime now, StatusBooking statusBooking);
 
@@ -29,11 +31,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findFirstByIdBookerAndItemIdAndStatusOrderByEndAsc(long authorId, long itemId, StatusBooking approved);
 
-    List<Booking> findAllByIdBookerAndStartIsBeforeAndEndIsAfter(long userId, LocalDateTime now, LocalDateTime now1);
+    Page<Booking> findAllByIdBookerAndStartIsBeforeAndEndIsAfter(long userId, LocalDateTime now, LocalDateTime now1, Pageable id);
 
-    List<Booking> findAllByIdBookerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(long userId, StatusBooking statusBooking, LocalDateTime now, LocalDateTime now1);
+    Page<Booking> findAllByIdBookerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(long userId, StatusBooking statusBooking, LocalDateTime now, LocalDateTime now1, Pageable id);
 
-    List<Booking> findAllByItemIdOwnerAndStartIsBeforeAndEndIsAfter(long userId, LocalDateTime now, LocalDateTime now1);
+    Page<Booking> findAllByItemIdOwnerAndStartIsBeforeAndEndIsAfter(long userId, LocalDateTime now, LocalDateTime now1, Pageable id);
 
-    List<Booking> findAllByItemIdOwnerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(long userId, StatusBooking statusBooking, LocalDateTime now, LocalDateTime now1);
+    Page<Booking> findAllByItemIdOwnerAndStatusAndStartIsBeforeAndEndIsBeforeOrderByIdDesc(long userId, StatusBooking statusBooking, LocalDateTime now, LocalDateTime now1, Pageable id);
 }

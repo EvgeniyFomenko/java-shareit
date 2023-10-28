@@ -39,4 +39,6 @@ public class Item {
     private BookingForItemDto nextBooking;
     @Transient
     private List<CommentAnswerDto> comments;
+    @Column(name = "request_id")
+    private Long requestId;
 }

@@ -12,7 +12,6 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repositories.ItemRepository;
 import ru.practicum.shareit.user.UserRepository;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +36,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDto create(@Valid BookingItemDto bookingItemDto, long userId) {
+    public BookingDto create(BookingItemDto bookingItemDto, long userId) {
         Booking booking = BookingItemMapper.fromDto(bookingItemDto);
         booking.setIdBooker(userId);
 

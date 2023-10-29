@@ -51,6 +51,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is4xxClientError());
+        Mockito.verify(userService, Mockito.atMostOnce()).create(Mockito.any());
     }
 
     @Test
@@ -102,6 +103,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(userService, Mockito.atMostOnce()).get(Mockito.anyLong());
     }
 
     @Test

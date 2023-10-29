@@ -70,10 +70,8 @@ public class BookingServiceImpl implements BookingService {
     public BookingDto updateBookingStatusById(BookingInputStatusDto bookingInputStatusDto) {
         Booking booking = bookingRepository.findById(bookingInputStatusDto.getBookingId()).orElseThrow(() -> new BookingNotFoundException("Бранирование не найдено"));
         String isApprove = bookingInputStatusDto.getIsApprove();
-        if (!isApprove.contains("false")) {
-            if (!isApprove.contains("true")) {
+        if (!isApprove.contains("false") && !isApprove.contains("true")) {
                 throw new NotFoundStateException("не известное значение isApproved");
-            }
         }
         long userId = bookingInputStatusDto.getUserId();
 

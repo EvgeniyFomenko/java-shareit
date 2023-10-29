@@ -11,7 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.practicum.shareit.exception.BadArgumentsPaginationException;
 import ru.practicum.shareit.exception.ControllerException;
+import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.RequestDto;
 import ru.practicum.shareit.request.entity.ItemRequest;
@@ -56,6 +58,7 @@ class ItemRequestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(itemRequestService, Mockito.times(1)).create(Mockito.any());
     }
 
     @Test
@@ -83,6 +86,7 @@ class ItemRequestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(itemRequestService, Mockito.times(1)).get(1L, 1);
     }
 
     @Test
@@ -95,5 +99,28 @@ class ItemRequestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(itemRequestService, Mockito.times(1)).getAll(1L, 1, 0);
+    }
+
+    @Test
+    public void getRequestsByIdException() throws Exception {
+        Mockito.when(itemRequestService.get(Mockito.anyLong(), Mockito.anyInt())).thenThrow(UserNotFoundException.class);
+        mvc.perform(get("/requests/{id}", 1L)
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void getAllRequestsPaginationException() throws Exception {
+        Mockito.when(itemRequestService.getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt())).thenThrow(BadArgumentsPaginationException.class);
+        mvc.perform(get("/requests/all?from=1&size=0", 1L)
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
     }
 }

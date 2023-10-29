@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingItemDto;
-import ru.practicum.shareit.exception.ControllerException;
+import ru.practicum.shareit.exception.*;
 
 import java.time.LocalDateTime;
 
@@ -28,8 +28,8 @@ class BookingControllerTest {
     BookingController bookingController;
     @Mock
     BookingServiceImpl bookingService;
-    private MockMvc mvc;
     ObjectMapper mapper = new ObjectMapper();
+    private MockMvc mvc;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +54,7 @@ class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(bookingService, Mockito.atMostOnce()).create(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
@@ -70,6 +71,7 @@ class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(bookingService, Mockito.atMostOnce()).updateBookingStatusById(Mockito.any());
     }
 
     @Test
@@ -81,6 +83,7 @@ class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        Mockito.verify(bookingService, Mockito.atMostOnce()).get(Mockito.any());
     }
 
     @Test
@@ -93,12 +96,92 @@ class BookingControllerTest {
     }
 
     @Test
+    public void getAllBookingForUser() throws Exception {
+        mvc.perform(get("/bookings?state=all&from=1&size=1")
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        Mockito.verify(bookingService, Mockito.times(1)).getAllBookingForUser(Mockito.any(), Mockito.anyInt(), Mockito.anyInt());
+    }
+
+    @Test
     public void getOwner() throws Exception {
         mvc.perform(get("/bookings/owner?state=all&from=1&size=1")
                         .header("X-Sharer-User-Id", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getForUserException() throws Exception {
+        Mockito.when(bookingService.getAllBookingForUser(Mockito.any(), Mockito.anyInt(), Mockito.anyInt())).thenThrow(UnknownStatus.class);
+        mvc.perform(get("/bookings?state=all&from=1&size=1")
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    public void postBookingTimeException() throws Exception {
+        Mockito.when(bookingService.create(Mockito.any(), Mockito.anyLong())).thenThrow(BookingTimeException.class);
+        BookingItemDto bookingItemDto = BookingItemDto.builder().itemId(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusDays(2)).build();
+        mvc.perform(post("/bookings")
+                        .content(mapper.writeValueAsString(bookingItemDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void postBookingItemUnavailableFoundException() throws Exception {
+        Mockito.when(bookingService.create(Mockito.any(), Mockito.anyLong())).thenThrow(ItemUnavailableException.class);
+        BookingItemDto bookingItemDto = BookingItemDto.builder().itemId(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusDays(2)).build();
+        mvc.perform(post("/bookings")
+                        .content(mapper.writeValueAsString(bookingItemDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void postBookingChangeDeprecatedException() throws Exception {
+        Mockito.when(bookingService.updateBookingStatusById(Mockito.any())).thenThrow(ChangeDeprecated.class);
+        BookingItemDto bookingItemDto = BookingItemDto.builder().itemId(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusDays(2)).build();
+        mvc.perform(patch("/bookings/1?approved=true")
+                        .content(mapper.writeValueAsString(bookingItemDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void postBookingNotFoundStateException() throws Exception {
+        Mockito.when(bookingService.updateBookingStatusById(Mockito.any())).thenThrow(NotFoundStateException.class);
+        BookingItemDto bookingItemDto = BookingItemDto.builder().itemId(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusDays(2)).build();
+        mvc.perform(patch("/bookings/1?approved=true")
+                        .content(mapper.writeValueAsString(bookingItemDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void postBookingNotFoundException() throws Exception {
+        Mockito.when(bookingService.updateBookingStatusById(Mockito.any())).thenThrow(BookingNotFoundException.class);
+        BookingItemDto bookingItemDto = BookingItemDto.builder().itemId(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusDays(2)).build();
+        mvc.perform(patch("/bookings/1?approved=true")
+                        .content(mapper.writeValueAsString(bookingItemDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
     }
 
 

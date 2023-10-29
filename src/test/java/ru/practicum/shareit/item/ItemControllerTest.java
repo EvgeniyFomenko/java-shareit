@@ -178,6 +178,20 @@ class ItemControllerTest {
     }
 
     @Test
+    public void postCommentOwnerHasNotItem() throws Exception {
+        CommentDto commentDto = CommentDto.builder().text("text").itemId(1).id(1).build();
+        CommentAnswerDto commentAnswerDto = CommentAnswerDto.builder().id(1).text("text").authorName("name").build();
+        Mockito.when(itemService.postCommentByItemId(Mockito.any())).thenThrow(OwnerHasNotItemException.class);
+        mvc.perform(post("/items/{id}/comment", 1L)
+                        .content(mapper.writeValueAsString(commentDto))
+                        .header("X-Sharer-User-Id", 1L)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
     public void postCommentChangeException() throws Exception {
         CommentDto commentDto = CommentDto.builder().text("text").itemId(1).id(1).build();
         CommentAnswerDto commentAnswerDto = CommentAnswerDto.builder().id(1).text("text").authorName("name").build();
@@ -190,5 +204,6 @@ class ItemControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
+
 
 }

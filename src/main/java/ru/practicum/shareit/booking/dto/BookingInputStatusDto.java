@@ -9,6 +9,6 @@ import lombok.Setter;
 @Builder
 public class BookingInputStatusDto {
     private long bookingId;
-    private String state;
+    private String isApprove;
     private long userId;
 }

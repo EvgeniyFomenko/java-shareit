@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingItemDto;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public BookingDto addResponseToBooking(@RequestBody BookingItemDto bookingItemDto, @RequestHeader("X-Sharer-User-Id") long userId) {
+    public BookingDto addResponseToBooking(@RequestBody @Valid BookingItemDto bookingItemDto, @RequestHeader("X-Sharer-User-Id") long userId) {
         return bookingService.create(bookingItemDto, userId);
     }
 
@@ -32,13 +33,13 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<BookingDto> getAllBookingForUser(@RequestParam(defaultValue = "ALL") String state, @RequestHeader("X-Sharer-User-Id") long userId) {
-        return bookingService.getAllBookingForUser(BookingMapper.toBookingInputStatusDto(0, state, userId));
+    public List<BookingDto> getAllBookingForUser(@RequestParam(defaultValue = "ALL") String state, @RequestHeader("X-Sharer-User-Id") long userId, @RequestParam(defaultValue = "0", required = false) Integer from, @RequestParam(defaultValue = "10", required = false) Integer size) {
+        return bookingService.getAllBookingForUser(BookingMapper.toBookingInputStatusDto(0, state, userId), from, size);
     }
 
     @GetMapping("/owner")
-    public List<BookingDto> getAllBookingForOwnerItem(@RequestParam(defaultValue = "ALL") String state, @RequestHeader("X-Sharer-User-Id") long userId) {
-        return bookingService.getAllBookingForOwnerItem(BookingMapper.toBookingInputStatusDto(0, state, userId));
+    public List<BookingDto> getAllBookingForOwnerItem(@RequestParam(defaultValue = "ALL") String state, @RequestHeader("X-Sharer-User-Id") long userId, @RequestParam(defaultValue = "0", required = false) Integer from, @RequestParam(defaultValue = "10", required = false) Integer size) {
+        return bookingService.getAllBookingForOwnerItem(BookingMapper.toBookingInputStatusDto(0, state, userId), from, size);
     }
 
 

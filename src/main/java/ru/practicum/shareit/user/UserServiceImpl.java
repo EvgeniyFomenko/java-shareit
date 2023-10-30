@@ -34,13 +34,6 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapperToDto(user1);
     }
 
-    private void validation(User user) {
-        if (Objects.nonNull(userRepository.findUserByEmail(user.getEmail()))) {
-            throw new AlreadyEmailExistException("Пользователь с таким email уже существует");
-        }
-
-    }
-
     @Override
     public UserDto update(UserDto userDto) {
         User user = UserMapper.mapperFromDto(userDto);

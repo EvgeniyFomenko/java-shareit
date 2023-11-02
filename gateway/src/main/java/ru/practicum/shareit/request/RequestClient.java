@@ -44,7 +44,7 @@ public class RequestClient extends BaseClient {
 
     public ResponseEntity<Object> getAllRequests(long userId, Integer from, Integer size) {
         if (Objects.isNull(from) || Objects.isNull(size)) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK) ;
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
         }
 
         if (from < 0 || size <= 0) {

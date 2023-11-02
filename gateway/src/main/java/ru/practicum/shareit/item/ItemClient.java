@@ -31,7 +31,7 @@ public class ItemClient extends BaseClient {
 
     public ResponseEntity<Object> getAll(long userId, Integer from, Integer size) {
         if (Objects.isNull(from) || Objects.isNull(size)) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK) ;
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
         }
 
         if (from < 0 || size <= 0) {
@@ -54,7 +54,7 @@ public class ItemClient extends BaseClient {
 
     public ResponseEntity<Object> update(long userId, ItemDto itemDto, long id) {
         itemDto.setId(id);
-        return patch("/" + id, userId,null,itemDto);
+        return patch("/" + id, userId, null, itemDto);
     }
 
     public ResponseEntity<Object> add(long userId, ItemDto itemDto) {
@@ -68,7 +68,7 @@ public class ItemClient extends BaseClient {
         }
 
         if (Objects.isNull(from) || Objects.isNull(size)) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK) ;
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
         }
 
         if (from < 0 || size <= 0) {

@@ -2,13 +2,17 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.exception.BadArgumentsPaginationException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import javax.validation.Valid;
+import java.util.Collections;
+import java.util.Objects;
 
 @RestController
 @RequestMapping(path = "/items")
@@ -20,6 +24,13 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<Object> getAll(@RequestHeader("X-Sharer-User-Id") long userId, @RequestParam(defaultValue = "0", required = false) Integer from, @RequestParam(defaultValue = "10", required = false) Integer size) {
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
         log.info("Get items with, userId={}, from={}, size={}", userId, from, size);
         return itemClient.getAll(userId, from, size);
     }
@@ -51,7 +62,19 @@ public class ItemController {
 
     @GetMapping("/search")
     public ResponseEntity<Object> search(@RequestParam String text, @RequestParam(defaultValue = "0", required = false) Integer from, @RequestParam(defaultValue = "10", required = false) Integer size) {
+        if (text.isBlank()) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
         log.info("Search item with, text={}, form={}, size={}",text, from,size);
+
         return itemClient.search(text, from, size);
     }
 

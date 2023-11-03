@@ -2,12 +2,16 @@ package ru.practicum.shareit.request;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.exception.BadArgumentsPaginationException;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 
 import javax.validation.Valid;
+import java.util.Collections;
+import java.util.Objects;
 
 @RestController
 @RequestMapping(path = "/requests")
@@ -40,6 +44,13 @@ public class RequestController {
 
     @GetMapping("/all")
     public ResponseEntity<Object> getAllRequests(@RequestHeader("X-Sharer-User-Id") long userId, @RequestParam(required = false) Integer from, @RequestParam(required = false) Integer size) {
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
         log.info("get all requests with userId={}, from={}, size={}",userId,from,size);
         return requestClient.getAllRequests(userId, from, size);
     }

@@ -2,17 +2,21 @@ package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookItemRequestDto;
 import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.exception.BadArgumentsPaginationException;
 import ru.practicum.shareit.exception.UnknownStatus;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
+import java.util.Collections;
+import java.util.Objects;
 
 @Controller
 @RequestMapping(path = "/bookings")
@@ -30,14 +34,20 @@ public class BookingController {
         log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
         BookingState state = BookingState.from(stateParam)
                 .orElseThrow(() -> new UnknownStatus("Unknown state: " + stateParam));
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
 
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
         return bookingClient.getBookings(userId, state, from, size);
     }
 
     @PostMapping
     public ResponseEntity<Object> bookItem(@RequestHeader("X-Sharer-User-Id") long userId,
                                            @RequestBody @Valid BookItemRequestDto requestDto) {
-        log.info("Creating booking start={},end={}, userId={}", requestDto.getStart(),requestDto.getEnd(), userId);
+        log.info("Creating booking start={},end={}, userId={}", requestDto.getStart(), requestDto.getEnd(), userId);
 
         return bookingClient.bookItem(userId, requestDto);
     }
@@ -51,13 +61,20 @@ public class BookingController {
     }
 
     @GetMapping("/owner")
-    public ResponseEntity<Object> getAllBookingForOwnerItem(@RequestParam(defaultValue = "ALL",name = "state") String stateParam,
+    public ResponseEntity<Object> getAllBookingForOwnerItem(@RequestParam(defaultValue = "ALL", name = "state") String stateParam,
                                                             @RequestHeader("X-Sharer-User-Id") long userId,
                                                             @RequestParam(defaultValue = "0", required = false) Integer from,
                                                             @RequestParam(defaultValue = "10", required = false) Integer size) {
         log.info("Get booking for owner with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
         BookingState state = BookingState.from(stateParam)
                 .orElseThrow(() -> new UnknownStatus("Unknown state: " + stateParam));
+        if (Objects.isNull(from) || Objects.isNull(size)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+
+        if (from < 0 || size <= 0) {
+            throw new BadArgumentsPaginationException("такой страницы не существует");
+        }
 
         return bookingClient.getBookingsForOwner(userId, state, from, size);
     }

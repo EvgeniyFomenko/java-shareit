@@ -3,19 +3,15 @@ package ru.practicum.shareit.item;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
-import ru.practicum.shareit.exception.BadArgumentsPaginationException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 public class ItemClient extends BaseClient {
@@ -30,13 +26,6 @@ public class ItemClient extends BaseClient {
     }
 
     public ResponseEntity<Object> getAll(long userId, Integer from, Integer size) {
-        if (Objects.isNull(from) || Objects.isNull(size)) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
-        }
-
-        if (from < 0 || size <= 0) {
-            throw new BadArgumentsPaginationException("такой страницы не существует");
-        }
         Map<String, Object> parameters = Map.of(
                 "from", from,
                 "size", size
@@ -63,17 +52,6 @@ public class ItemClient extends BaseClient {
     }
 
     public ResponseEntity<Object> search(String text, Integer from, Integer size) {
-        if (text.isBlank()) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
-        }
-
-        if (Objects.isNull(from) || Objects.isNull(size)) {
-            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
-        }
-
-        if (from < 0 || size <= 0) {
-            throw new BadArgumentsPaginationException("такой страницы не существует");
-        }
         Map<String, Object> parameters = Map.of(
                 "from", from,
                 "size", size,
